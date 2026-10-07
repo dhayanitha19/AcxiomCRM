@@ -1,0 +1,53 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="page-heading">
+  <div><p class="eyebrow">OVERVIEW</p><h1>Dashboard</h1><p class="muted mb-0">A quick view of the sales work in your scope.</p></div>
+  <div class="heading-actions"><a class="btn btn-outline-secondary" href="{{ url_for('reports') }}">View reports</a><a class="btn btn-primary" href="{{ url_for('new_record', module='leads') }}">Add lead</a></div>
+</div>
+<form method="get" class="dashboard-date-filter" id="dashboard-filter">
+  <label class="form-label mb-0" for="period">Date range</label>
+  <select class="form-select" id="period" name="period">
+    {% for key,label in [('all','All time'),('today','Today'),('week','This week'),('month','This month'),('custom','Custom range')] %}<option value="{{ key }}" {% if period==key %}selected{% endif %}>{{ label }}</option>{% endfor %}
+  </select>
+  <div class="custom-dates" id="custom-dates" {% if period!='custom' %}hidden{% endif %}>
+    <label class="visually-hidden" for="start">From</label><input class="form-control" type="date" id="start" name="start" value="{{ start_date }}">
+    <span class="muted small">to</span><label class="visually-hidden" for="end">To</label><input class="form-control" type="date" id="end" name="end" value="{{ end_date }}">
+  </div>
+  <button class="btn btn-outline-primary" type="submit">Apply</button>
+</form>
+<section class="kpi-grid">
+  {% for label,key,note in [('Customers','customers','Active records'),('Leads','leads','All lead statuses'),('Open leads','open_leads','Needs follow-up'),('Opportunities','opportunities','All stages'),('Open opportunities','open_opportunities','In progress'),('Won','won','Closed successfully'),('Lost','lost','Closed without a sale'),('Open pipeline','pipeline','Unweighted amount')] %}
+  <article class="kpi-card"><div class="kpi-label">{{ label }}</div><div class="kpi-value">{% if key == 'pipeline' %}₹{{ '{:,.0f}'.format(counts[key]) }}{% else %}{{ counts[key] }}{% endif %}</div><div class="kpi-note">{{ note }}</div></article>
+  {% endfor %}
+</section>
+<div class="row g-3 mt-1">
+  <div class="col-xl-7"><section class="panel h-100"><div class="panel-heading"><div><h2>Lead status</h2><p>Current records in your scope</p></div></div><div class="chart-wrap"><canvas id="leadChart" aria-label="Lead status chart"></canvas></div></section></div>
+  <div class="col-xl-5"><section class="panel h-100"><div class="panel-heading"><div><h2>Opportunity stages</h2><p>Count by pipeline stage</p></div></div><div class="chart-wrap"><canvas id="opportunityChart" aria-label="Opportunity stages chart"></canvas></div></section></div>
+</div>
+<div class="row g-3 mt-1">
+  <div class="col-xl-7"><section class="panel"><div class="panel-heading"><div><h2>Upcoming follow-ups</h2><p>Planned activities from today onward</p></div><a href="{{ url_for('list_records', module='followups') }}">All follow-ups</a></div>
+  {% if upcoming %}<div class="table-responsive"><table class="table table-hover align-middle mb-0"><thead><tr><th>Subject</th><th>Related record</th><th>Date</th><th>Status</th></tr></thead><tbody>{% for item in upcoming %}<tr><td>{{ item.subject }}</td><td>{{ item.related_name or item.related_type }}</td><td>{{ item.followup_date }}</td><td><span class="status-pill">{{ item.status }}</span></td></tr>{% endfor %}</tbody></table></div>{% else %}<div class="empty-state compact"><p>No upcoming follow-ups yet.</p><a href="{{ url_for('new_record', module='followups') }}">Schedule a follow-up</a></div>{% endif %}
+  </section></div>
+  <div class="col-xl-5"><section class="panel"><div class="panel-heading"><div><h2>Monthly sales</h2><p>Won opportunity amount since this month</p></div></div><div class="chart-wrap chart-short"><canvas id="monthlyChart" aria-label="Monthly sales chart"></canvas></div></section></div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='vendor/chart.umd.min.js') }}"></script>
+<script>
+document.getElementById('period').addEventListener('change', function(){ document.getElementById('custom-dates').hidden=this.value!=='custom'; });
+const leadRows={{ lead_chart|map(attribute='status')|list|tojson }};
+const leadValues={{ lead_chart|map(attribute='n')|list|tojson }};
+const leadOrder=['New','Contacted','Qualified','Unqualified','Lost','Converted'];
+const leadMap=Object.fromEntries(leadRows.map((x,i)=>[x,leadValues[i]]));
+const oppRows={{ opp_chart|map(attribute='stage')|list|tojson }};
+const oppValues={{ opp_chart|map(attribute='n')|list|tojson }};
+const oppMap=Object.fromEntries(oppRows.map((x,i)=>[x,oppValues[i]]));
+const monthlyRows={{ monthly|map(attribute='month')|list|tojson }};
+const monthlyValues={{ monthly|map(attribute='amount')|list|tojson }};
+const chartColors=['#275b72','#4e8296','#80a9b5','#b1c8ce','#d2b26e','#6d8a73'];
+const baseOptions={responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{usePointStyle:true,boxWidth:8,padding:16}}}};
+new Chart(document.getElementById('leadChart'),{type:'doughnut',data:{labels:leadOrder,datasets:[{data:leadOrder.map(x=>leadMap[x]||0),backgroundColor:chartColors,borderWidth:1,borderColor:'#fff'}]},options:baseOptions});
+new Chart(document.getElementById('opportunityChart'),{type:'bar',data:{labels:['Qualification','Proposal','Negotiation','Won','Lost'],datasets:[{label:'Opportunities',data:['Qualification','Proposal','Negotiation','Won','Lost'].map(x=>oppMap[x]||0),backgroundColor:'#6f9caf',borderRadius:3}]},options:{...baseOptions,scales:{y:{beginAtZero:true,ticks:{precision:0}},x:{grid:{display:false}}},plugins:{legend:{display:false}}}});
+new Chart(document.getElementById('monthlyChart'),{type:'line',data:{labels:monthlyRows,datasets:[{label:'Won amount',data:monthlyValues,borderColor:'#275b72',backgroundColor:'rgba(39,91,114,.12)',fill:true,tension:.2}]},options:{...baseOptions,plugins:{legend:{display:false}},scales:{y:{beginAtZero:true},x:{grid:{display:false}}}}});
+</script>
+{% endblock %}

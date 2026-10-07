@@ -1,0 +1,71 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{{ title }} · AcxiomCRM</title>
+  <link href="{{ url_for('static', filename='vendor/bootstrap.min.css') }}" rel="stylesheet">
+  <link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+{% if current_user %}
+<nav class="navbar navbar-expand-lg navbar-dark app-topbar">
+  <div class="container-fluid px-3 px-lg-4">
+    <a class="navbar-brand fw-semibold" href="{{ url_for('dashboard') }}"><span class="brand-mark">A</span> AcxiomCRM</a>
+    <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#topNav" aria-controls="topNav" aria-expanded="false" aria-label="Toggle navigation"><span class="navbar-toggler-icon"></span></button>
+    <div class="collapse navbar-collapse" id="topNav">
+      <div class="ms-auto d-flex align-items-center gap-3 py-2 py-lg-0">
+        <a class="overdue-link" href="{{ url_for('list_records',module='followups',overdue=1) }}" aria-label="{{ overdue_count }} overdue follow-ups">Overdue <span class="overdue-count">{{ overdue_count }}</span></a>
+        <span class="small text-white-50">{{ current_user.name }} <span class="role-chip">{{ current_user.role }}</span></span>
+        <form method="post" action="{{ url_for('logout') }}" class="m-0">
+          <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+          <button class="btn btn-sm btn-outline-light" type="submit">Sign out</button>
+        </form>
+      </div>
+    </div>
+  </div>
+</nav>
+<div class="container-fluid">
+  <div class="row">
+    <aside class="col-lg-2 app-sidebar px-0">
+      <div class="nav-section-label">WORKSPACE</div>
+      <nav class="nav flex-column">
+        <a class="side-link {% if request.endpoint == 'dashboard' %}active{% endif %}" href="{{ url_for('dashboard') }}"><span class="nav-dot"></span>Dashboard</a>
+        {% for slug, label in [('customers','Customers'),('leads','Leads'),('opportunities','Opportunities'),('followups','Follow-ups'),('activities','Activities')] %}
+        <a class="side-link {% if request.view_args and request.view_args.get('module') == slug or request.endpoint == 'list_records' and request.view_args.get('module') == slug %}active{% endif %}" href="{{ url_for('list_records', module=slug) }}"><span class="nav-dot"></span>{{ label }}</a>
+        {% endfor %}
+        <div class="nav-section-label mt-4">INSIGHTS</div>
+        <a class="side-link {% if request.endpoint == 'reports' %}active{% endif %}" href="{{ url_for('reports') }}"><span class="nav-dot"></span>Reports</a>
+        <a class="side-link {% if request.endpoint == 'api_docs' %}active{% endif %}" href="{{ url_for('api_docs') }}"><span class="nav-dot"></span>API reference</a>
+        {% if current_user.role == 'Admin' %}
+        <div class="nav-section-label mt-4">ADMINISTRATION</div>
+        <a class="side-link {% if request.endpoint in ['users_page','create_user','update_user'] %}active{% endif %}" href="{{ url_for('users_page') }}"><span class="nav-dot"></span>Users & roles</a>
+        <a class="side-link {% if request.endpoint == 'audit_page' %}active{% endif %}" href="{{ url_for('audit_page') }}"><span class="nav-dot"></span>Audit log</a>
+        {% endif %}
+      </nav>
+      <div class="sidebar-note">CRM workspace<br><span>Signed in as {{ current_user.role }}</span></div>
+    </aside>
+    <main class="col-lg-10 app-main px-3 px-lg-4 py-4">
+      {% with messages = get_flashed_messages(with_categories=true) %}
+      {% if messages %}<div class="flash-stack" aria-live="polite">{% for category, message in messages %}<div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">{{ message }}<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button></div>{% endfor %}</div>{% endif %}
+      {% endwith %}
+      {% block content %}{% endblock %}
+      <footer class="app-footer">AcxiomCRM · Student project</footer>
+    </main>
+  </div>
+</div>
+{% else %}
+<div class="auth-wrap">
+  <div class="auth-brand"><span class="brand-mark">A</span> AcxiomCRM</div>
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}<div class="flash-stack">{% for category, message in messages %}<div class="alert alert-{{ category }}" role="alert">{{ message }}</div>{% endfor %}</div>{% endif %}
+  {% endwith %}
+  {% block auth_content %}{% endblock %}
+  <p class="auth-footer">A simple place to manage customer and sales activity.</p>
+</div>
+{% endif %}
+<script src="{{ url_for('static', filename='vendor/bootstrap.bundle.min.js') }}"></script>
+<script src="{{ url_for('static', filename='app.js') }}"></script>
+{% block scripts %}{% endblock %}
+</body>
+</html>

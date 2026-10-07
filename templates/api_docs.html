@@ -1,0 +1,18 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow">DEVELOPER NOTES</p><h1>REST API</h1><p class="muted mb-0">JSON endpoints for the CRM records. Protected routes use the signed-in session.</p></div></div>
+<section class="panel"><div class="panel-heading"><div><h2>Available endpoints</h2><p>All write requests require the session CSRF token in <code>X-CSRF-Token</code>.</p></div></div><div class="table-responsive"><table class="table align-middle"><thead><tr><th>Method</th><th>Path</th><th>Purpose</th><th>Access</th></tr></thead><tbody>
+{% for method,path,purpose,access in [('POST','/api/auth/login','Sign in with JSON email and password','Public; lockout applies'),('POST','/api/auth/logout','End the current session','Authenticated'),('GET','/api/customers','List/search customers (?q=, ?status=)','Authenticated and scoped'),('GET','/api/customers/{id}','Get one customer','Authenticated and scoped'),('POST','/api/customers','Create customer','Authenticated and validated'),('PUT','/api/customers/{id}','Update customer','Authenticated and scoped'),('DELETE','/api/customers/{id}','Deactivate customer','Authenticated and scoped'),('GET','/api/leads','List/search leads','Authenticated and scoped'),('POST','/api/leads','Create lead','Authenticated and validated'),('GET','/api/opportunities','List opportunities','Authenticated and scoped'),('POST','/api/opportunities','Create opportunity','Authenticated and validated'),('GET','/api/followups','List follow-ups','Authenticated and scoped'),('POST','/api/followups','Create follow-up','Authenticated and validated'),('GET','/api/reports/pipeline','Stage totals and weighted pipeline','Authenticated; role-scoped')] %}<tr><td><span class="method-tag method-{{ method|lower }}">{{ method }}</span></td><td><code>{{ path }}</code></td><td>{{ purpose }}</td><td>{{ access }}</td></tr>{% endfor %}
+</tbody></table></div></section>
+<div class="row g-3 mt-1"><div class="col-lg-6"><section class="panel h-100"><h2>Sign in</h2><pre><code>POST /api/auth/login
+Content-Type: application/json
+
+{"email":"person@example.com","password":"your-password"}</code></pre><p class="small muted mb-0">The response includes a CSRF token for subsequent write requests. The password and hash are never returned.</p></section></div><div class="col-lg-6"><section class="panel h-100"><h2>Create a customer</h2><pre><code>POST /api/customers
+Content-Type: application/json
+X-CSRF-Token: &lt;csrf_token&gt;
+
+{"name":"Example Co","email":"contact@example.com",
+ "phone":"+91 98765 43210","status":"Active",
+ "owner_id":1}</code></pre><p class="small muted mb-0">Success returns <code>201</code>. Invalid data returns <code>400</code>; duplicates return <code>409</code>; unauthenticated calls return <code>401</code>.</p></section></div></div>
+<section class="panel mt-3"><h2>Response shape</h2><pre><code>{"item":{"id":12,"name":"Example Co","email":"contact@example.com", "phone":"+91 98765 43210"}}</code></pre><p class="small muted mb-0">Lists return <code>{"items": [...], "count": 0}</code>. Database internals and password fields are excluded.</p></section>
+{% endblock %}

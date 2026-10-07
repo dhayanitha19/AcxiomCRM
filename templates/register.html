@@ -1,0 +1,17 @@
+{% extends 'layout.html' %}
+{% block auth_content %}
+<section class="auth-card">
+  <p class="eyebrow">NEW ACCOUNT</p>
+  <h1>Create an account</h1>
+  <p class="muted">The first account is the administrator. Later sign-ups start as Sales Executive accounts.</p>
+  <form method="post" class="needs-validation" novalidate>
+    <input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+    <div class="mb-3"><label for="name" class="form-label">Full name</label><input class="form-control" id="name" name="name" maxlength="120" required><div class="invalid-feedback">Enter your name.</div></div>
+    <div class="mb-3"><label for="email" class="form-label">Email</label><input class="form-control" id="email" name="email" type="email" maxlength="160" autocomplete="email" required><div class="invalid-feedback">Enter a valid email address.</div></div>
+    <div class="mb-3"><label for="password" class="form-label">Password</label><input class="form-control" id="password" name="password" type="password" minlength="8" autocomplete="new-password" required><div class="form-text">At least 8 characters, with a letter and a number.</div><div class="invalid-feedback">Use at least 8 characters.</div></div>
+    <div class="mb-3"><label for="confirm_password" class="form-label">Confirm password</label><input class="form-control" id="confirm_password" name="confirm_password" type="password" minlength="8" autocomplete="new-password" required><div class="invalid-feedback">Confirm your password.</div></div>
+    <button class="btn btn-primary w-100 mt-2" type="submit">Create account</button>
+  </form>
+  <div class="auth-divider"></div><p class="small mb-0">Already have an account? <a href="{{ url_for('login') }}">Sign in</a></p>
+</section>
+{% endblock %}

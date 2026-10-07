@@ -1,0 +1,2 @@
+{% extends 'layout.html' %}
+{% block content %}<section class="panel error-panel"><div class="empty-mark">!</div><p class="eyebrow">REQUEST NOT COMPLETED</p><h1>{{ title }}</h1><p class="muted">{{ message }}</p><a class="btn btn-primary" href="{{ url_for('dashboard') if current_user else url_for('login') }}">{% if current_user %}Back to dashboard{% else %}Sign in{% endif %}</a></section>{% endblock %}

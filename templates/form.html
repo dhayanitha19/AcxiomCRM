@@ -1,0 +1,20 @@
+{% extends 'layout.html' %}
+{% block content %}
+<div class="page-heading"><div><p class="eyebrow"><a href="{{ url_for('list_records',module=module) }}">{{ config.title|upper }}</a> / {{ 'EDIT' if record else 'NEW' }}</p><h1>{{ title }}</h1><p class="muted mb-0">Fields marked with * are required.</p></div><a class="btn btn-outline-secondary" href="{{ url_for('list_records',module=module) }}">Back to {{ config.title|lower }}</a></div>
+<section class="panel form-panel"><form method="post" class="needs-validation" novalidate>
+<input type="hidden" name="csrf_token" value="{{ csrf_token }}">
+<div class="form-grid">
+{% for field in fields %}<div class="form-field {% if field.kind=='textarea' %}field-wide{% endif %}">
+<label class="form-label" for="{{ field.name }}">{{ field.label }}{% if field.required %} <span class="required-mark">*</span>{% endif %}</label>
+{% if field.kind=='textarea' %}<textarea class="form-control" id="{{ field.name }}" name="{{ field.name }}" rows="3" maxlength="2000" {% if field.required %}required{% endif %}>{{ field.value }}</textarea>
+{% elif field.kind=='select' or field.kind in ['user','customer','lead'] %}<select class="form-select" id="{{ field.name }}" name="{{ field.name }}" {% if field.required %}required{% endif %}><option value="">Select…</option>{% for optval,optlabel in field.options %}<option value="{{ optval }}" {% if optval|string == field.value|string %}selected{% endif %}>{{ optlabel }}</option>{% endfor %}</select>
+{% else %}<input class="form-control" id="{{ field.name }}" name="{{ field.name }}" type="{{ field.kind }}" value="{{ field.value }}" {% if field.required %}required{% endif %}{% if field.maxlength %} maxlength="{{ field.maxlength }}"{% endif %}{% if field.min is defined %} min="{{ field.min }}"{% endif %}{% if field.kind=='number' %} min="0" step="{{ field.step }}"{% if field.name=='probability' %} max="100"{% endif %}{% endif %}{% if field.kind=='tel' %} pattern="\+?[0-9][0-9() .-]{7,18}[0-9]"{% endif %}>
+{% endif %}<div class="invalid-feedback">{% if field.kind=='email' %}Enter a valid email address.{% elif field.kind=='tel' %}Enter a valid phone number.{% else %}{{ field.label }} is required or invalid.{% endif %}</div>
+{% if module=='followups' and field.name=='related_id' %}<div class="form-text">Use the ID shown in the related record's details page.</div>{% endif %}
+{% if module=='activities' and field.name in ['customer_id','lead_id'] %}<div class="form-text">Optional. Enter the related record ID.</div>{% endif %}
+</div>{% endfor %}
+</div>
+{% if module=='opportunities' %}<div class="form-hint">An open opportunity needs an amount above ₹0 and a close date today or later. Weighted pipeline is amount × probability.</div>{% elif module=='followups' %}<div class="form-hint">A planned follow-up cannot be dated before today.</div>{% elif module=='leads' %}<div class="form-hint">Lead status changes follow a simple workflow. A qualified lead can be converted from its details page.</div>{% endif %}
+<div class="form-actions"><a class="btn btn-outline-secondary" href="{{ url_for('list_records',module=module) }}">Cancel</a><button class="btn btn-primary" type="submit">{{ 'Save changes' if record else 'Create ' + config.singular|lower }}</button></div>
+</form></section>
+{% endblock %}
